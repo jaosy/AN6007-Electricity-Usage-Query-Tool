@@ -149,7 +149,6 @@ def display_results(records, chosen_year, chosen_region, chosen_dwelling_type):
     for record in records:
         if record.area not in area_groupings:
             area_groupings[record.area] = {}
-        print(record.avg_kwh_per_acc)
         area_groupings[record.area][record.month] = record.avg_kwh_per_acc
     
     # print 'table' header
@@ -162,7 +161,7 @@ def display_results(records, chosen_year, chosen_region, chosen_dwelling_type):
     for area in sorted(area_groupings.keys()):
         print(f"{area:<20}", end="")
         for month in range(1, 13):
-            value = area_groupings[area].get(str(month))
+            value = area_groupings[area].get(month)
             if value is None:
                 print(f"{'':>8}", end="")
             else:
