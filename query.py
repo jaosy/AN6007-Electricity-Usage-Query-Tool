@@ -6,7 +6,6 @@ Date: 12/17/2024
 """
 
 from complete import get_electricity_data
-from models import ElectricityRecord
 
 
 dwelling_types = {
