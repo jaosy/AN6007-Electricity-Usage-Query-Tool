@@ -123,12 +123,12 @@ if __name__ == "__main__":
     data = get_electricity_data()
     max_input_size = len(data)
 
-    # it is known that the size of the input is at least 20000 from the data exploration portion
+    # got these sizes from looking at the data earlier
     input_sizes = [1000, 5000, 10000, 15000, 20000, max_input_size]
     pandas_timing_sizes = []
     pure_python_timing_sizes = []
 
-    # collect timing results for both approaches
+    # run both approaches and collect timings
     for size in input_sizes:
         print(f"\nTesting with input size: {size}")
         pandas_result = pandas_approach(size)
@@ -137,12 +137,19 @@ if __name__ == "__main__":
         pure_python_result = pure_python_approach(size)
         pure_python_timing_sizes.append(pure_python_result)
 
-    # create two subplots side by side
+    # setup the plots side by side
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
     operations = ['merge', 'transform', 'make_output']
     colors = ['b', 'g', 'r']
 
-    # Pandas approach
+    # find the max y value across both approaches to sync the scales
+    max_time = max(
+        max(result[op]['avg'] for result in pandas_timing_sizes for op in operations),
+        max(result[op]['avg'] for result in pure_python_timing_sizes for op in operations)
+    )
+    y_limit = max_time * 1.1  # add 10% padding
+
+    # plot pandas results
     for op, color in zip(operations, colors):
         avg_times = [result[op]['avg'] for result in pandas_timing_sizes]
         ax1.plot(input_sizes, avg_times, f'{color}o-', label=op.capitalize())
@@ -157,10 +164,11 @@ if __name__ == "__main__":
     ax1.set_xlabel('Input Size')
     ax1.set_ylabel('Average Time (seconds)')
     ax1.set_title('Pandas Approach: Time vs Input Size')
+    ax1.set_ylim(0, y_limit)  # sync y axis
     ax1.legend()
     ax1.grid(True)
 
-    # pure Python approach
+    # plot pure python results
     for op, color in zip(operations, colors):
         avg_times = [result[op]['avg'] for result in pure_python_timing_sizes]
         ax2.plot(input_sizes, avg_times, f'{color}o-', label=op.capitalize())
@@ -175,6 +183,7 @@ if __name__ == "__main__":
     ax2.set_xlabel('Input Size')
     ax2.set_ylabel('Average Time (seconds)')
     ax2.set_title('Pure Python Approach: Time vs Input Size')
+    ax2.set_ylim(0, y_limit)  # sync y axis
     ax2.legend()
     ax2.grid(True)
 
@@ -183,14 +192,14 @@ if __name__ == "__main__":
 
         for i, size in enumerate(input_sizes):
             for op in operations:
-                # Round all numerical values to 2 decimal places
+                # round everything to 2 decimals for cleaner output
                 pandas_time = round(pandas_results[i][op]['avg'], 2)
                 python_time = round(python_results[i][op]['avg'], 2)
                 diff = round(python_time - pandas_time, 2)
                 speedup = round(python_time / pandas_time, 2)
 
                 comparison_data.append({
-                    'Input Size': f"{size:,}",  # Format with comma separators
+                    'Input Size': f"{size:,}",
                     'Operation': op.capitalize(),
                     'Pandas Avg (s)': pandas_time,
                     'Python Avg (s)': python_time,
@@ -211,11 +220,11 @@ if __name__ == "__main__":
                 'Speedup Factor': 'Speedup'
             },
             tablefmt='pretty',
-            floatfmt=('', '', '.2f', '.2f', '.2f', '.2f')  # Consistent 2 decimal places
+            floatfmt=('', '', '.2f', '.2f', '.2f', '.2f')
         )
 
         return formatted_table
-    
+
     print("\nPerformance Comparison Summary:")
     print(create_comparison_table(pandas_timing_sizes, pure_python_timing_sizes, input_sizes))
 
@@ -231,5 +240,4 @@ if __name__ == "__main__":
         print(f"Overall Speedup: {python_total/pandas_total:.2f}x")
 
     plt.tight_layout()
-    plt.savefig('performance_comparison.png')
     plt.show()

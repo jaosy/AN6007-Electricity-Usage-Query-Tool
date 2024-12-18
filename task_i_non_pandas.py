@@ -96,30 +96,16 @@ def merge(area_data, date_dim_data, dwelling_data, electricity_data):
     return merged_data
 
 
+# select relevant columns
 def transform(merged_data):
-    grouped_data = defaultdict(list)
-
-    for record in merged_data:
-        group_key = (
-            record['region'],
-            record['area'],
-            record['year'],
-            record['month'],
-            record['dwelling_type']
-        )
-        grouped_data[group_key].append(record['kwh_per_acc'])
-
-    denormalized_data = [
-        {
-            'region': region,
-            'area': area,
-            'year': year,
-            'month': month,
-            'dwelling_type': dwelling_type,
-            'avg_kwh_per_acc': mean(values)
-        }
-        for (region, area, year, month, dwelling_type), values in grouped_data.items()
-    ]
+    denormalized_data = [{
+        'region': record['region'],
+        'area': record['area'],
+        'year': record['year'],
+        'month': record['month'],
+        'dwelling_type': record['dwelling_type'],
+        'avg_kwh_per_acc': record['kwh_per_acc']
+    } for record in merged_data]
 
     # sort the result
     denormalized_data.sort(key=lambda x: (

@@ -12,129 +12,51 @@ Date: 12/16/2024
 """
 
 
+import pandas as pd
 from models import ElectricityRecord
-from collections import defaultdict
-from statistics import mean
 
 
 def read_input():
-    area_data = []
-    with open('Area.txt', 'r') as file:
-        # skip the header row
-        next(file) 
-        for line in file:
-            area_id, area, region = line.strip().split(';')
-            datapoint = {}
-            datapoint['area_id'] = int(area_id)
-            datapoint['area'] = area
-            datapoint['region'] = region
-            area_data.append(datapoint)
-            
-    date_dim_data = []
-    with open('DateDim.txt', 'r') as file: 
-        # skip the header row
-        next(file)
-        for line in file:
-            date_id, year, month, quarter = line.strip().split(';')
-            datapoint = {}
-            datapoint['date_id'] = int(date_id)
-            datapoint['year'] = year
-            datapoint['month'] = month
-            datapoint['quarter'] = quarter
-            date_dim_data.append(datapoint)
+    area_df = pd.read_csv('Area.txt', sep=';')
+    date_dim_df = pd.read_csv('DateDim.txt', sep=';')
+    dwelling_df = pd.read_csv('Dwelling.txt', sep=',')
+    electricity_df = pd.read_csv('Electricity.txt'
+    , sep=';')
 
-    dwelling_data = []
-    with open('Dwelling.txt', 'r') as file:
-        # skip the header row
-        next(file)
-        for line in file:
-            type_id, dwelling_type = line.strip().split(',')
-            datapoint = {}
-            datapoint['type_id'] = int(type_id)
-            datapoint['dwelling_type'] = dwelling_type
-            dwelling_data.append(datapoint)
-
-    electricity_data = []
-    with open('Electricity.txt', 'r') as file:
-        # skip the header row
-        next(file)
-        for line in file:
-            date_id, area_id, dwelling_type_id, kwh_per_acc = line.strip().split(';')
-            datapoint = {}
-            datapoint['date_id'] = int(date_id)
-            datapoint['area_id'] = int(area_id)
-            datapoint['type_id'] = int(dwelling_type_id)
-            datapoint['kwh_per_acc'] = float(kwh_per_acc)
-            electricity_data.append(datapoint)
-
-    return [area_data, date_dim_data, dwelling_data, electricity_data]
+    return [area_df, date_dim_df, dwelling_df, electricity_df]
 
 
-def merge(area_data, date_dim_data, dwelling_data, electricity_data):
-    merged_data = []
+def merge(area_df: pd.DataFrame, date_dim_df: pd.DataFrame, dwelling_df: pd.DataFrame, electricity_df: pd.DataFrame) -> pd.DataFrame:
+    merged_df = pd.merge(electricity_df, area_df, on='AreaID', how='inner')
+    merged_df = pd.merge(merged_df, date_dim_df, on='DateID', how='inner')
+    merged_df = pd.merge(merged_df, dwelling_df, left_on='dwelling_type_id', right_on='TypeID', how='inner')
 
-    for electricity_record in electricity_data:
-        for area in area_data:
-            if electricity_record['area_id'] == area['area_id']:
-                merged_record = {**electricity_record, **area}
-                merged_data.append(merged_record)
-
-    date_dict = {record['date_id']: record for record in date_dim_data} # O(n)
-    for i in range(len(merged_data)): # O(m)
-        date_id = merged_data[i]['date_id'] # O(1)
-        if date_id in date_dict:
-            merged_data[i] = {**date_dict[date_id], **merged_data[i]} 
+    return merged_df
 
 
-    dwelling_dict = {record['type_id']: record for record in dwelling_data}
-    for i in range(len(merged_data)):
-        type_id = merged_data[i]['type_id']
-        if type_id in dwelling_dict:
-            merged_data[i] = {**dwelling_dict[type_id], **merged_data[i]}
+# select relevant columns
+def transform(merged_df: pd.DataFrame):
+    df = merged_df[['Region', 'Area', 'year', 'month', 'dwelling_type', 'kwh_per_acc']]
+    df = df.sort_values(['Area', 'year', 'month', 'dwelling_type'])
 
-    return merged_data
+    return df
 
 
-def transform(merged_data):
-    grouped_data = defaultdict(list)
-
-    for record in merged_data:
-        group_key = (
-            record['region'],
-            record['area'],
-            record['year'],
-            record['month'],
-            record['dwelling_type']
+def make_output(denormalized_df: pd.DataFrame):
+    records = [
+        ElectricityRecord(
+            region=row.Region,
+            area=row.Area,
+            year=row.year,
+            month=row.month,
+            dwelling_type=row.dwelling_type,
+            avg_kwh_per_acc=row.kwh_per_acc
         )
-        grouped_data[group_key].append(record['kwh_per_acc'])
-
-    denormalized_data = [
-        {
-            'region': region,
-            'area': area,
-            'year': year,
-            'month': month,
-            'dwelling_type': dwelling_type,
-            'avg_kwh_per_acc': mean(values)
-        }
-        for (region, area, year, month, dwelling_type), values in grouped_data.items()
+        
+        for row in denormalized_df.itertuples()
     ]
 
-    # sort the result
-    denormalized_data.sort(key=lambda x: (
-        x['area'],
-        x['year'],
-        x['month'],
-        x['dwelling_type']
-    ))
-
-    return denormalized_data
-
-
-def make_output(denormalized_data):
-    final_records = [ElectricityRecord(record['region'], record['area'], record['year'], record['month'], record['dwelling_type'], record['avg_kwh_per_acc']) for record in denormalized_data]
-
-    return final_records
+    return records
 
 
 def get_electricity_data():

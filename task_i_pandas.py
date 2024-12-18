@@ -35,13 +35,12 @@ def merge(area_df: pd.DataFrame, date_dim_df: pd.DataFrame, dwelling_df: pd.Data
     return merged_df
 
 
+# select relevant columns
 def transform(merged_df: pd.DataFrame):
-    denormalized_df = merged_df.groupby(['Region', 'Area', 'year', 'month', 'dwelling_type'])['kwh_per_acc'].mean().reset_index()
-    denormalized_df = denormalized_df.rename(columns={'kwh_per_acc': 'avg_kwh_per_acc'})
-    denormalized_df['avg_kwh_per_acc'] = denormalized_df['avg_kwh_per_acc'].round(2)
-    denormalized_df = denormalized_df.sort_values(['Area', 'year', 'month', 'dwelling_type'])
+    df = merged_df[['Region', 'Area', 'year', 'month', 'dwelling_type', 'kwh_per_acc']]
+    df = df.sort_values(['Area', 'year', 'month', 'dwelling_type'])
 
-    return denormalized_df
+    return df
 
 
 def make_output(denormalized_df: pd.DataFrame):
@@ -52,7 +51,7 @@ def make_output(denormalized_df: pd.DataFrame):
             year=row.year,
             month=row.month,
             dwelling_type=row.dwelling_type,
-            avg_kwh_per_acc=row.avg_kwh_per_acc
+            avg_kwh_per_acc=row.kwh_per_acc
         )
         
         for row in denormalized_df.itertuples()
