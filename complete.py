@@ -68,6 +68,7 @@ def get_electricity_data():
     return result
 
 
+# for standalone testing complete.py output
 if __name__ == "__main__":
     datasets = read_input()
     merged_data = merge(datasets[0], datasets[1], datasets[2], datasets[3])
