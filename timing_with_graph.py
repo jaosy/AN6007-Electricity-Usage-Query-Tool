@@ -1,6 +1,6 @@
 import timeit
 import statistics
-from complete import get_electricity_data
+from task_i_pandas import read_input, merge, transform, make_output
 import matplotlib.pyplot as plt
 import pandas as pd
 from tabulate import tabulate  # For nice table formatting
@@ -120,7 +120,12 @@ denormalized_data = transform(merged_data)
     return timing_results
 
 if __name__ == "__main__":
-    data = get_electricity_data()
+    # setup from task_i_pandas.py
+    input_df = read_input()
+    merged_df = merge(input_df[0], input_df[1], input_df[2], input_df[3])
+    denormalized_df = transform(merged_df)
+    data = make_output(denormalized_df)
+
     max_input_size = len(data)
 
     # got these sizes from looking at the data earlier

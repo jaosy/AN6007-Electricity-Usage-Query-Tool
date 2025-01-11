@@ -14,9 +14,6 @@ Date: 12/16/2024
 
 
 from models import ElectricityRecord
-from collections import defaultdict
-from statistics import mean
-
 
 def read_input():
     area_data = []
