@@ -25,3 +25,5 @@ This project implements a simple command-line query tool using data from Singapo
 ## 🎮 How to Use
 Run `python query.py`
 
+![query preview](https://github.com/jaosy/AN6007-Electricity-Usage-Query-Tool/blob/main/query_example.png)
+![timing preview](https://github.com/jaosy/AN6007-Electricity-Usage-Query-Tool/blob/main/timing_graph.png)
